@@ -69,14 +69,14 @@ func (g *grid) move(m move) *grid {
 }
 
 func (g *grid) possible(sz int) []move {
-	s := make([]move, 0)
+	s := make([]move, 0, 8)
 	for r := 0; r < 6; r++ {
 		for c := 0; c < 8; c++ {
 			if g[r][c] > 0 {
-				if m := g.checkrow(sz, r, c); len(m) > 0 {
+				if m := g.checkrow(sz, r, c); m != nil {
 					s = append(s, m)
 				}
-				if m := g.checkcol(sz, r, c); len(m) > 0 {
+				if m := g.checkcol(sz, r, c); m != nil {
 					s = append(s, m)
 				}
 			}
@@ -87,7 +87,8 @@ func (g *grid) possible(sz int) []move {
 
 func (g *grid) checkrow(sz, r, c int) move {
 	t := g[r][c]
-	m := move{p{r,c}}
+	m := make(move, 0, sz)
+	m = append(m, p{r,c})
 	if t == sz {
 		// this point on it's own satisfies a move of size sz
 		return m
@@ -96,32 +97,33 @@ func (g *grid) checkrow(sz, r, c int) move {
 	for c2 := c+1; c2 < 8; c2++ {
 		if g[r][c2] == 0 { continue }
 		t += g[r][c2]
-		if t > sz { return move{} }
+		if t > sz { return nil }
 		m = append(m, p{r,c2})
 		if t == sz { return m }
 	}
 	// if we get here no moves are possible
-	return move{}
+	return nil
 }
 
 func (g *grid) checkcol(sz, r, c int) move {
 	t := g[r][c]
-	m := move{p{r,c}}
+	m := make(move, 0, sz)
+	m = append(m, p{r,c})
 	if t == sz {
 		// We only want to return a single-point move once, so
 		// do it in checkrow but not here in checkcol
-		return move{}
+		return nil
 	}
 	// Check down along column
 	for r2 := r+1; r2 < 6; r2++ {
 		if g[r2][c] == 0 { continue }
 		t += g[r2][c]
-		if t > sz { return move{} }
+		if t > sz { return nil }
 		m = append(m, p{r2,c})
 		if t == sz { return m }
 	}
 	// if we get here no moves are possible
-	return move{}
+	return nil
 }
 
 func (m move) output(w io.Writer) {
@@ -156,7 +158,8 @@ func main() {
 	} else {
 		g.load(os.Stdin)
 	}
-	st := []stack{{g, make([]move, 0)}}
+	st := make([]stack, 0, 32)
+	st = append(st, stack{g, make([]move, 0)})
 	sz := 2
 	if len(flag.Args()) > 0 {
 		sz, _ = strconv.Atoi(flag.Arg(0))
@@ -198,5 +201,5 @@ func search(st []stack, sz int) []move {
 			}
 		}
 	}
-	return make([]move, 0)
+	return nil
 }
