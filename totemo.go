@@ -164,8 +164,9 @@ func main() {
 	if len(flag.Args()) > 0 {
 		sz, _ = strconv.Atoi(flag.Arg(0))
 	}
-	if moves := search(st, sz); len(moves) > 0 {
-		fmt.Printf("Found a solution in %d moves.\n", len(moves))
+	if moves, poss := search(st, sz); len(moves) > 0 {
+		fmt.Printf("Found a solution in %d moves, tested %d possible.\n",
+			len(moves), poss)
 		for i, m := range moves {
 			fmt.Printf("Move %d:\n", i)
 			g = g.move(m)
@@ -178,14 +179,16 @@ func main() {
 	}
 }
 
-func search(st []stack, sz int) []move {
+func search(st []stack, sz int) ([]move, int) {
 	var s stack
+	var p int
 	for len(st) > 0 {
 		// pull a stack frame from the end of the stack
 		// (we want a depth-first search for memory reasons)
 		st, s = st[:len(st)-1], st[len(st)-1]
 		for _, m := range s.g.possible(sz) {
 			// create a new grid copy taking this possible move
+			p++
 			g := s.g.move(m)
 			// copy all the moves from the stack
 			n := make([]move, len(s.m)+1)
@@ -194,12 +197,12 @@ func search(st []stack, sz int) []move {
 			n[len(n)-1] = m
 			if g.empty() {
 				// fuck it, bail out when we have one solution :-)
-				return n
+				return n, p
 			} else {
 				// otherwise push the new grid and move set onto the stack
 				st = append(st, stack{g, n})
 			}
 		}
 	}
-	return nil
+	return nil, 0
 }
