@@ -1,11 +1,17 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"runtime/pprof"
 	"strconv"
 )
+
+var totem = flag.String("totem", "", "load totem from this file rather than stdin")
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 // A totemo level is an 8x6 grid with points having values
 type grid [6][8]int
@@ -128,12 +134,32 @@ func (m move) output(w io.Writer) {
 }
 
 func main() {
+    flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            log.Fatal(err)
+        }
+		fmt.Println("Profiling CPU")
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
+
 	g := new(grid)
-	g.load(os.Stdin)
+	if *totem != "" {
+		f, err := os.Open(*totem)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.load(f)
+		f.Close()
+	} else {
+		g.load(os.Stdin)
+	}
 	st := []stack{{g, make([]move, 0)}}
 	sz := 2
-	if len(os.Args) > 1 {
-		sz, _ = strconv.Atoi(os.Args[1])
+	if len(flag.Args()) > 0 {
+		sz, _ = strconv.Atoi(flag.Arg(0))
 	}
 	if moves := search(st, sz); len(moves) > 0 {
 		fmt.Printf("Found a solution in %d moves.\n", len(moves))
